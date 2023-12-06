@@ -1,4 +1,8 @@
 # %%
+#   Predict the purchase amount by age, gender, location, size, season, item purchased, and color.
+#   What is the expected purchase amount for a customer's next transaction based on their previous purchasing behavior,
+#   including the frequency of purchases, average review rating,and the types of items purchased?
+# %%
 
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.linear_model import LogisticRegression
