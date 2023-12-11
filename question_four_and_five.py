@@ -1,95 +1,100 @@
-#%% Preprocess the data
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import classification_report, accuracy_score
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+#%% [Data Loading and Initial Exploration]
 
-# Load the dataset
+import pandas as pd
+
+# Load and display the first few rows of the dataset
 file_path = './shopping_behavior_updated.csv'
 data = pd.read_csv(file_path)
-
-# Preprocessing the data as per the provided script
-preprocessed_data = data.copy()
-
-# Encoding categorical variables using LabelEncoder
-label_encoders = {}
-categorical_columns = ['Gender', 'Item Purchased', 'Category', 'Location', 'Size', 'Color', 
-                       'Season', 'Subscription Status', 'Shipping Type', 'Discount Applied', 
-                       'Promo Code Used', 'Payment Method', 'Frequency of Purchases']
-
-for column in categorical_columns:
-    label_encoders[column] = LabelEncoder()
-    preprocessed_data[column] = label_encoders[column].fit_transform(preprocessed_data[column])
-
-# Normalizing numerical variables
-numerical_columns = ['Age', 'Purchase Amount (USD)', 'Review Rating', 'Previous Purchases']
-scaler = StandardScaler()
-preprocessed_data[numerical_columns] = scaler.fit_transform(preprocessed_data[numerical_columns])
-
-# Creating a binary target variable for 'Clothing' category (assuming 'Clothing' is encoded as 1)
-preprocessed_data['Is_Clothing'] = (preprocessed_data['Category'] == 1).astype(int)
+data.head()
 
 
-#%% Question 4
-#  What age group constitutes the primary force for purchasing items in the ‘Clothing’ category? (Using K-Nearest Neighbors)
-# Selecting the features and target variable for the KNN model
-features = ['Age', 'Gender', 'Previous Purchases']
-target = 'Is_Clothing'
+#%% [Analyzing Clothing Purchases by Age Group]
 
-X_knn = preprocessed_data[features]
-y_knn = preprocessed_data[target]
-X_train_knn, X_test_knn, y_train_knn, y_test_knn = train_test_split(X_knn, y_knn, test_size=0.2, random_state=42)
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-knn = KNeighborsClassifier(n_neighbors=5)
-knn.fit(X_train_knn, y_train_knn)
-y_pred_knn = knn.predict(X_test_knn)
+# Filter data for 'Clothing' category and group by age
+clothing_data = data[data['Category'] == 'Clothing']
+age_group_counts = clothing_data.groupby('Age').size()
 
-accuracy_knn = accuracy_score(y_test_knn, y_pred_knn)
-report_knn = classification_report(y_test_knn, y_pred_knn)
-
-print("K-Nearest Neighbors Model Results:")
-print("Accuracy:", accuracy_knn)
-print("Classification Report:\n", report_knn)
+# Plot the distribution of clothing purchases by age
+plt.figure(figsize=(12, 6))
+sns.barplot(x=age_group_counts.index, y=age_group_counts.values)
+plt.title('Number of Clothing Purchases by Age Group')
+plt.xlabel('Age')
+plt.ylabel('Number of Purchases')
+plt.xticks(rotation=45)
+plt.show()
 
 
+#%% [Seasonal Purchase Prediction Model]
+# Can we predict the likelihood of a customer making a purchase in a specific season
+# (e.g., Winter, Summer) based on their past purchase patterns and demographics?
 
-#%% Question 5
-# Can we predict the likelihood of a customer making a purchase in a specific category based on demographics
-#  (Age, Gender), location, and previous purchase history? (Using Logistic Regression and Random Forests)
-
-
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+from sklearn.model_selection import train_test_split
 
-features_lr_rf = ['Age', 'Gender', 'Location', 'Previous Purchases']
-target_lr_rf = 'Category'
+# Preprocessing: Creating target variables for seasonal purchases
+data['Winter Purchase'] = (data['Season'] == 'Winter').astype(int)
+data['Summer Purchase'] = (data['Season'] == 'Summer').astype(int)
 
-X_lr_rf = preprocessed_data[features_lr_rf]
-y_lr_rf = preprocessed_data[target_lr_rf]
-X_train_lr_rf, X_test_lr_rf, y_train_lr_rf, y_test_lr_rf = train_test_split(X_lr_rf, y_lr_rf, test_size=0.2, random_state=42)
+# Feature selection
+features = ['Age', 'Gender', 'Location', 'Previous Purchases', 'Review Rating', 'Subscription Status']
+X = data[features]
+y_winter = data['Winter Purchase']
+y_summer = data['Summer Purchase']
 
-log_reg = LogisticRegression(max_iter=1000)
-log_reg.fit(X_train_lr_rf, y_train_lr_rf)
-y_pred_log_reg = log_reg.predict(X_test_lr_rf)
+# Data splitting for Winter and Summer
+X_train_winter, X_test_winter, y_train_winter, y_test_winter = train_test_split(X, y_winter, test_size=0.2, random_state=42)
+X_train_summer, X_test_summer, y_train_summer, y_test_summer = train_test_split(X, y_summer, test_size=0.2, random_state=42)
 
-random_forest = RandomForestClassifier(n_estimators=100)
-random_forest.fit(X_train_lr_rf, y_train_lr_rf)
-y_pred_rf = random_forest.predict(X_test_lr_rf)
+# Pipeline with OneHotEncoder and RandomForestClassifier
+categorical_features = ['Gender', 'Location', 'Subscription Status']
+one_hot_encoder = OneHotEncoder()
+preprocessor = ColumnTransformer(transformers=[('cat', one_hot_encoder, categorical_features)], remainder='passthrough')
+rf_model = Pipeline(steps=[('preprocessor', preprocessor), ('classifier', RandomForestClassifier(random_state=42))])
 
-accuracy_log_reg = accuracy_score(y_test_lr_rf, y_pred_log_reg)
-report_log_reg = classification_report(y_test_lr_rf, y_pred_log_reg)
-accuracy_rf = accuracy_score(y_test_lr_rf, y_pred_rf)
-report_rf = classification_report(y_test_lr_rf, y_pred_rf)
+# Train and evaluate the model for Winter Purchases
+rf_model.fit(X_train_winter, y_train_winter)
+y_pred_winter = rf_model.predict(X_test_winter)
+accuracy_winter = accuracy_score(y_test_winter, y_pred_winter)
+report_winter = classification_report(y_test_winter, y_pred_winter)
 
-print("\nLogistic Regression Model Results:")
-print("Accuracy:", accuracy_log_reg)
-print("Classification Report:\n", report_log_reg)
+# Train and evaluate the model for Summer Purchases
+rf_model.fit(X_train_summer, y_train_summer)
+y_pred_summer = rf_model.predict(X_test_summer)
+accuracy_summer = accuracy_score(y_test_summer, y_pred_summer)
+report_summer = classification_report(y_test_summer, y_pred_summer)
 
-print("\nRandom Forest Model Results:")
-print("Accuracy:", accuracy_rf)
-print("Classification Report:\n", report_rf)
+# Results
+accuracy_winter, accuracy_summer, report_winter, report_summer
 
 
+#%% [SVC Model for Seasonal Purchase Prediction]
 
-# %%
+from sklearn.svm import SVC
+
+# Function to train and evaluate SVC model
+def train_evaluate_svc(X_train, X_test, y_train, y_test):
+    svc_model = Pipeline(steps=[
+        ('preprocessor', preprocessor), 
+        ('classifier', SVC(random_state=42, kernel='rbf', C=1.0))
+    ])
+    svc_model.fit(X_train, y_train)
+    y_pred = svc_model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred)
+    return accuracy, report
+
+# Train and evaluate for Winter Purchases
+accuracy_winter_svc, report_winter_svc = train_evaluate_svc(X_train_winter, X_test_winter, y_train_winter, y_test_winter)
+
+# Train and evaluate for Summer Purchases
+accuracy_summer_svc, report_summer_svc = train_evaluate_svc(X_train_summer, X_test_summer, y_train_summer, y_test_summer)
+
+# Results
+accuracy_winter_svc, accuracy_summer_svc, report_winter_svc, report_summer_svc
