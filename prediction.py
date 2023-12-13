@@ -4,6 +4,11 @@
 #   including the frequency of purchases, average review rating,and the types of items purchased?
 # %%
 
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import VotingClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import silhouette_score
 import seaborn as sns
 from sklearn.impute import SimpleImputer
@@ -184,101 +189,102 @@ plt.show()
 
 
 # %%
-# second try
 
+# add a column that shows if person bought a clothing product
+# 1: yes, 0: no
+# 1 is the clothing category in the dataset
+CLOTHING = 1
+preprocessed_data['Clothing'] = np.where(
+    preprocessed_data['Category'] == CLOTHING, 1, 0)
+preprocessed_data['Clothing'].value_counts()
 
-X = preprocessed_data['Age', 'Gender', 'Location',
-                      'Season']
-y = preprocessed_data['Purchase Amount (USD)']
-
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42)
-
-# Initialize the Linear Regression model
-model = LinearRegression()
-
-# Train the model
-model.fit(X_train, y_train)
-
-# Make predictions on the test set
-y_pred = model.predict(X_test)
-coefficients = pd.DataFrame({
-    'Feature': X.columns,
-    'Coefficient': model.coef_
-})
-
-# Display coefficients sorted by magnitude
-coefficients = coefficients.reindex(
-    coefficients['Coefficient'].abs().sort_values(ascending=False).index)
-print(coefficients)
-# Evaluate the model
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-# accuracy = accuracy_score(y_test, y_pred)
-# print(f'accuracy: {accuracy}')
-print(f'Mean Squared Error: {mse}')
-print(f'R-squared: {r2}')
 
 # %%
-# Random Forest Regressor
-# Import necessary libraries
 
-# Separate features (X) and target variable (y)
-X = preprocessed_data['Age', 'Subscription Status', 'Season',
-                      'Frequency of Purchases', 'Review Rating', 'Previous Purchases']
-y = preprocessed_data['Purchase Amount Group']
+print(preprocessed_data.columns)
+
+# Assuming X contains features and y contains the binary target variable 'Clothing'
+# Make sure to exclude the original 'Category' column if it's still present in X
+X = preprocessed_data.drop(['Category', 'Clothing'], axis=1)
+y = preprocessed_data['Clothing']
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42)
 
-# Initialize the Random Forest Regressor model
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-
-# Train the model
-model.fit(X_train, y_train)
+# Create and train the Random Forest model
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
 
 # Make predictions on the test set
-y_pred = model.predict(X_test)
+y_pred = rf_model.predict(X_test)
 
 # Evaluate the model
-# mse = mean_squared_error(y_test, y_pred)
-# r2 = r2_score(y_test, y_pred)
-
 accuracy = accuracy_score(y_test, y_pred)
-print(f'accuracy: {accuracy}')
-# print(f'Mean Squared Error: {mse}')
-# print(f'R-squared: {r2}')
+print(f"Accuracy: {accuracy:.2f}")
 
-# # Example: Predicting the purchase amount for a new customer
-# new_customer_data = pd.DataFrame({
-#     'Age': [30],
-#     'Gender': ['Male'],
-#     'Location': ['New York'],
-#     'Size': ['M'],
-#     'Season': ['Fall'],
-#     'Item Purchased': ['Sweater'],
-#     'Color': ['Blue'],
-#     'Frequency of Purchases': [10],
-#     'Review Rating': [4.0],
-#     'Previous Purchases': [20]
-# })
+# Classification report for more detailed evaluation
+print(classification_report(y_test, y_pred))
 
-# # Encode categorical variables for the new customer
-# for column in categorical_columns:
-#     new_customer_data[column] = label_encoders[column].transform(
-#         new_customer_data[column])
+# %%
+# Fine tuning this model
 
-# # Make a prediction for the new customer
-# new_customer_prediction = model.predict(new_customer_data)
+# Define the hyperparameters and their possible values
+param_grid = {
+    'n_estimators': [50, 100, 150],
+    'max_depth': [None, 10, 20],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': ['auto', 'sqrt', 'log2'],
+    'bootstrap': [True, False]
+}
 
-# print(
-#     f'Predicted Purchase Amount for the New Customer: {new_customer_prediction[0]}')
+# Create the Random Forest model
+rf_model = RandomForestClassifier(random_state=42)
+
+# Perform grid search with cross-validation
+grid_search = GridSearchCV(rf_model, param_grid, cv=5, scoring='accuracy')
+grid_search.fit(X_train, y_train)
+
+# Get the best hyperparameter values
+best_params = grid_search.best_params_
+print("Best Hyperparameters:", best_params)
+
+# Get the best model
+best_rf_model = grid_search.best_estimator_
+
+# Make predictions on the test set using the best model
+y_pred_tuned = best_rf_model.predict(X_test)
+
+# Evaluate the tuned model
+accuracy_tuned = accuracy_score(y_test, y_pred_tuned)
+print(f"Tuned Model Accuracy: {accuracy_tuned:.2f}")
+
+# Classification report for more detailed evaluation
+print(classification_report(y_test, y_pred_tuned))
 
 # %%
 
-# we first used 'Age', 'Gender', 'Location', 'Size', 'Season', 'Item Purchased', 'Color', 'Frequency of Purchases', 'Review Rating', 'Previous Purchases'
-# these features to predict the purchase amount but the MSE and R-squared are not good enough.
+# Define individual classifiers
+rf_classifier = RandomForestClassifier(
+    n_estimators=100, random_state=42, class_weight='balanced')
+svm_classifier = SVC(probability=True)
+gb_classifier = GradientBoostingClassifier()
 
-# we need to find the most important features to predict the purchase amount
+# Create a Voting Classifier
+voting_classifier = VotingClassifier(estimators=[
+    ('rf', rf_classifier),
+    ('svm', svm_classifier),
+    ('gb', gb_classifier)
+], voting='soft')  # 'soft' allows for probability voting
+
+# Train the Voting Classifier
+voting_classifier.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred_voting = voting_classifier.predict(X_test)
+
+# Evaluate the Voting Classifier
+accuracy_voting = accuracy_score(y_test, y_pred_voting)
+print(f"Voting Classifier Accuracy: {accuracy_voting:.2f}")
+# %%
