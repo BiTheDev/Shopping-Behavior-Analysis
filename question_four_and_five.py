@@ -28,8 +28,8 @@ plt.show()
 
 
 #%% [Seasonal Purchase Prediction Model]
-# Can we predict the likelihood of a customer making a purchase in a specific season
-# (e.g., Winter, Summer) based on their past purchase patterns and demographics?
+# Can we predict the likelihood of a customer making a purchase in each season
+# based on their past purchase patterns and demographics?
 
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.compose import ColumnTransformer
@@ -41,16 +41,22 @@ from sklearn.model_selection import train_test_split
 # Preprocessing: Creating target variables for seasonal purchases
 data['Winter Purchase'] = (data['Season'] == 'Winter').astype(int)
 data['Summer Purchase'] = (data['Season'] == 'Summer').astype(int)
+data['Spring Purchase'] = (data['Season'] == 'Spring').astype(int)
+data['Winter Purchase'] = (data['Season'] == 'Winter').astype(int)
 
 # Feature selection
 features = ['Age', 'Gender', 'Location', 'Previous Purchases', 'Review Rating', 'Subscription Status']
 X = data[features]
 y_winter = data['Winter Purchase']
 y_summer = data['Summer Purchase']
+y_spring = data['Spring Purchase']
+y_winter = data['Winter Purchase']
 
-# Data splitting for Winter and Summer
+# Data splitting for each season
 X_train_winter, X_test_winter, y_train_winter, y_test_winter = train_test_split(X, y_winter, test_size=0.2, random_state=42)
 X_train_summer, X_test_summer, y_train_summer, y_test_summer = train_test_split(X, y_summer, test_size=0.2, random_state=42)
+X_train_spring, X_test_spring, y_train_spring, y_test_spring = train_test_split(X, y_spring, test_size=0.2, random_state=42)
+X_train_winter, X_test_winter, y_train_winter, y_test_winter = train_test_split(X, y_winter, test_size=0.2, random_state=42)
 
 # Pipeline with OneHotEncoder and RandomForestClassifier
 categorical_features = ['Gender', 'Location', 'Subscription Status']
@@ -70,8 +76,20 @@ y_pred_summer = rf_model.predict(X_test_summer)
 accuracy_summer = accuracy_score(y_test_summer, y_pred_summer)
 report_summer = classification_report(y_test_summer, y_pred_summer)
 
+# Train and evaluate the model for Spring Purchases
+rf_model.fit(X_train_spring, y_train_spring)
+y_pred_spring = rf_model.predict(X_test_spring)
+accuracy_spring = accuracy_score(y_test_summer, y_pred_spring)
+report_spring = classification_report(y_test_spring, y_pred_spring)
+
+# Train and evaluate the model for Winter Purchases
+rf_model.fit(X_train_winter, y_train_winter)
+y_pred_winter = rf_model.predict(X_test_winter)
+accuracy_winter = accuracy_score(y_test_winter, y_pred_winter)
+report_winter = classification_report(y_test_winter, y_pred_winter)
+
 # Results
-accuracy_winter, accuracy_summer, report_winter, report_summer
+accuracy_winter, accuracy_summer, report_winter, report_summer, accuracy_spring, report_spring, accuracy_winter,report_winter
 
 
 #%% [SVC Model for Seasonal Purchase Prediction]
@@ -96,5 +114,17 @@ accuracy_winter_svc, report_winter_svc = train_evaluate_svc(X_train_winter, X_te
 # Train and evaluate for Summer Purchases
 accuracy_summer_svc, report_summer_svc = train_evaluate_svc(X_train_summer, X_test_summer, y_train_summer, y_test_summer)
 
+
+# Train and evaluate for Spring Purchases
+accuracy_spring_svc, report_spring_svc = train_evaluate_svc(X_train_spring, X_test_spring, y_train_spring, y_test_spring)
+
+
+# Train and evaluate for Winter Purchases
+
+accuracy_winter_svc, report_winter_svc = train_evaluate_svc(X_train_winter, X_test_winter, y_train_winter, y_test_winter)
+
+
 # Results
-accuracy_winter_svc, accuracy_summer_svc, report_winter_svc, report_summer_svc
+accuracy_winter_svc, accuracy_summer_svc, report_winter_svc, report_summer_svc, accuracy_spring_svc, report_spring_svc, accuracy_winter_svc, report_winter_svc
+
+# %%
