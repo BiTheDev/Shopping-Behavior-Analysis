@@ -13,7 +13,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split, cross_val_score, KFold
+from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, explained_variance_score
 
 # Load the dataset
@@ -66,80 +66,129 @@ y = preprocessed_data[target_col]
 
 # Split the dataset into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=10)
-# Create linear regressor models
-rfr = RandomForestRegressor(n_estimators=100, random_state=20)
-lr = LinearRegression()
-models = [rfr, lr]
 
-# Train the models
-for model in models:
-    model.fit(X_train, y_train)
+#%% 
+# Create a linear regression model
+lr_model = LinearRegression()
 
-    # Make Predictions on the test set
-    predictions = model.predict(X_test)
+# Define hyperparameters to tune
+lr_param_grid = {'fit_intercept': [True, False], 'normalize': [True, False]}
 
-    # Evaluate Model Performance
-    mse = mean_squared_error(y_test, predictions)
-    mae = mean_absolute_error(y_test, predictions)
-    r2 = r2_score(y_test, predictions)
-    explained_variance = explained_variance_score(y_test, predictions)
-    
-    # Get the model name
-    model_name = model.__class__.__name__
+# Use k-fold cross-validation for hyperparameter tuning
+lr_kf = KFold(n_splits=9, shuffle=True, random_state=40)
 
-    # Display the score results
-    print(f"{model_name}: ")
-    print(f"The Mean Squared Error is {mse:.2f}")
-    print(f"The Mean Absolute Error is {mae:.2f} ")
-    print(f"The R-squared is {r2:.2f}")
-    print(f"The Explained Variance Score is {explained_variance: .2f}")
-    print("----------")
+# GridSearchCV for hyperparameter tuning
+lr_grid_search = GridSearchCV(lr_model, lr_param_grid, scoring='neg_mean_squared_error', cv=lr_kf)
+lr_grid_search.fit(X_train, y_train)
 
-    # Set up k-fold cross-validation
-    kf = KFold(n_splits=5, shuffle=True, random_state=30)
+# Display the best hyperparameters and best model
+print("Best Hyperparameters:", lr_grid_search.best_params_)
+best_lr_model = lr_grid_search.best_estimator_
 
-    # Perform k-fold cross-validation
-    cv_scores = cross_val_score(model, X, y, cv=kf, scoring='r2')
+# Evaluate the best model on the test set
+lr_y_pred = best_lr_model.predict(X_test)
 
-    # Print the cross-validation results
-    print(f'R-squared for each fold: {cv_scores}')
-    print(f'Mean R-squared: {np.mean(cv_scores)}')
-    print("***********************************************")
+lr_mse = mean_squared_error(y_test, lr_y_pred)
+lr_mae = mean_absolute_error(y_test, lr_y_pred)
+lr_r2 = r2_score(y_test, lr_y_pred)
+lr_explained_variance = explained_variance_score(y_test,lr_y_pred)
 
-    metrics = ['MSE', 'MAE', 'R-squared', 'Explained Variance', 'K-fold CV']
-    scores = [mse, mae, r2, explained_variance, cv_scores.mean()]
+# Display the score results
+print(f"{lr_model.__class__.__name__}: ")
+print(f"Mean Squared Error is {lr_mse:.2f}")
+print(f"Mean Absolute Error is {lr_mae:.2f} ")
+print(f"R-squared is {lr_r2:.2f}")
+print(f"Explained Variance Score is {lr_explained_variance: .2f}")
+print("------------------------------------")
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    bars = ax.bar(metrics, scores, color=['blue', 'green', 'red', 'purple', 'orange'])
+#%%
+# Define the RandomForestRegressor
+rf_model = RandomForestRegressor()
 
-    # Adding the scores on top of the bars
-    for bar in bars:
-        yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 3), ha='center', va='bottom')
+# Define the parameter grid to search
+rf_param_grid = {
+    'n_estimators': [50, 100, 200, 300],
+    'max_features': ['sqrt', 'log2'],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4]
+}
 
-    # Adding labels and title
-    plt.xlabel('Metrics')
-    plt.ylabel('Score')
-    plt.title(f'{model_name} Metrics')
+# Create a KFold cross-validation object
+rf_kf = KFold(n_splits=5, shuffle=True, random_state=15)
 
+# Create the GridSearchCV object
+rf_grid_search = GridSearchCV(estimator=rf_model, param_grid=rf_param_grid, scoring='neg_mean_squared_error', cv=rf_kf)
+
+# Fit the model with the data
+rf_grid_search.fit(X, y)
+
+# Get the best parameters and best model
+rf_best_params = rf_grid_search.best_params_
+rf_best_model = rf_grid_search.best_estimator_
+
+# Print the best parameters
+print(f"Best Parameters: {rf_best_params}")
+
+# Use the best model to make predictions
+rf_y_pred = rf_best_model.predict(X_test)
+
+# Evaluate the model
+rf_mse = mean_squared_error(y_test, rf_y_pred)
+rf_mae = mean_absolute_error(y_test, rf_y_pred)
+rf_r2 = r2_score(y_test, rf_y_pred)
+rf_explained_variance = explained_variance_score(y_test, rf_y_pred)
+
+# Display the score results
+print(f"{rf_model.__class__.__name__}:")
+print(f"Mean Squared Error is {rf_mse:.2f}")
+print(f"Mean Absolute Error is {rf_mae:.2f} ")
+print(f"R-squared is {rf_r2:.2f}")
+print(f"Explained Variance Score is {rf_explained_variance: .2f}")
+print("------------------------------------")
+
+#%%
+#%% Visualize the comparison scores of two models
+# Create lists for each metric and model
+metrics = ['Mean Squared Error (MSE)', 'Mean Absolute Error (MAE)', 'R-squared', 'Explained Variance']
+lr_scores = [lr_mse, lr_mae, lr_r2, lr_explained_variance]
+rf_scores = [rf_mse, rf_mae, rf_r2, rf_explained_variance]
+
+# Plotting
+fig, ax = plt.subplots(figsize=(10, 6))
+
+bar_width = 0.35
+index = range(len(metrics))
+
+bar1 = ax.bar(index, lr_scores, bar_width, label='Linear Regression')
+bar2 = ax.bar([i + bar_width for i in index], rf_scores, bar_width, label='Random Forest Regressor')
+
+# Add labels, title, and legend
+ax.set_xlabel('Metrics')
+ax.set_ylabel('Scores')
+ax.set_title('Comparison of Model Scores')
+ax.set_xticks([i + bar_width / 2 for i in index])
+ax.set_xticklabels(metrics)
+ax.legend()
 
 # Display the plot
 plt.show()
 
 #%%
-# Summerize:
-# In both models, the R-squared values and the Explained Variance Scores
-# are negative, indicating that the models are not performing well in 
-# explaining the variance in the target variable. Additionally, the positive
-# K-fold Cross-Validation mean R-squared for LinearRegression suggests a 
-# slightly better performance compared to RandomForestRegressor, but overall, 
-# the models may not be capturing the underlying patterns in the data 
-# effectively.
+# Results:
+# LinearRegression: 
+# Mean Squared Error is 0.98
+# Mean Absolute Error is 0.85 
+# R-squared is -0.01
+# Explained Variance Score is -0.01
 
-#%%
-# def decode(label_encoder, encoded_val):
-#     if isinstance(encoded_val, float) or isinstance(encoded_val, int):
-#         encoded_val = np.array([encoded_val])
-#     return label_encoder.inverse_transform(encoded_val)
-
+# RandomForestRegressor:
+# Mean Squared Error is 0.70
+# Mean Absolute Error is 0.71 
+# R-squared is 0.28
+# Explained Variance Score is  0.28
+#
+# In summary, based on the provided scores, the Random Forest Regressor 
+# outperforms the Linear Regression model in terms of predictive performance, 
+# as indicated by lower MSE, higher R-squared, and Explained Variance Score.
 #%%
