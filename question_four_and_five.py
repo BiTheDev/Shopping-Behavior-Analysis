@@ -128,3 +128,168 @@ accuracy_winter_svc, report_winter_svc = train_evaluate_svc(X_train_winter, X_te
 accuracy_winter_svc, accuracy_summer_svc, report_winter_svc, report_summer_svc, accuracy_spring_svc, report_spring_svc, accuracy_winter_svc, report_winter_svc
 
 # %%
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+# Load the dataset
+file_path = './shopping_behavior_updated.csv'
+data = pd.read_csv(file_path)
+
+# Encoding categorical variables
+categorical_columns = ['Gender', 'Location', 'Subscription Status', 'Shipping Type', 'Discount Applied', 'Promo Code Used', 'Payment Method']
+for column in categorical_columns:
+    data[column] = LabelEncoder().fit_transform(data[column])
+
+# Mapping 'Season' to numeric values
+season_mapping = {season: idx for idx, season in enumerate(data['Season'].unique())}
+data['Season'] = data['Season'].map(season_mapping)
+
+# Creating a target variable for not purchasing in Spring (assuming Spring is mapped to a specific index)
+data['No Purchase in Spring'] = (data['Season'] != season_mapping['Spring']).astype(int)
+
+# Selecting relevant features
+features = ['Age', 'Gender', 'Location', 'Previous Purchases']
+X = data[features]
+y = data['No Purchase in Spring']
+
+# Splitting the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardizing the data
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Training a Random Forest Classifier
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train_scaled, y_train)
+
+# Predicting and evaluating the model
+y_pred = model.predict(X_test_scaled)
+accuracy = accuracy_score(y_test, y_pred)
+
+# Output the accuracy
+print("Accuracy of the model:", accuracy)
+
+# %%
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import GridSearchCV
+
+# Load the dataset
+file_path = './shopping_behavior_updated.csv'
+data = pd.read_csv(file_path)
+
+# Encoding categorical variables
+categorical_columns = ['Gender', 'Location', 'Subscription Status', 'Shipping Type', 'Discount Applied', 'Promo Code Used', 'Payment Method']
+for column in categorical_columns:
+    data[column] = LabelEncoder().fit_transform(data[column])
+
+# Mapping 'Season' to numeric values
+season_mapping = {season: idx for idx, season in enumerate(data['Season'].unique())}
+data['Season'] = data['Season'].map(season_mapping)
+
+# Creating a target variable for not purchasing in Spring
+data['No Purchase in Spring'] = (data['Season'] != season_mapping['Spring']).astype(int)
+
+# Selecting relevant features
+features = ['Age', 'Gender', 'Location', 'Previous Purchases']
+X = data[features]
+y = data['No Purchase in Spring']
+
+# Splitting the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardizing the data
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Initializing the SVC model
+svc = SVC(random_state=42)
+
+# Defining the parameter grid for fine-tuning
+param_grid = {
+    'C': [0.1, 1, 10, 100],  # Regularization parameter
+    'gamma': ['scale', 'auto'],  # Kernel coefficient
+    'kernel': ['linear', 'rbf', 'poly']  # Specifies the kernel type to be used in the algorithm
+}
+
+# Setting up GridSearchCV to find the best parameters
+grid_search = GridSearchCV(estimator=svc, param_grid=param_grid, cv=5, verbose=2, n_jobs=-1)
+
+# Fitting GridSearchCV to the training data
+grid_search.fit(X_train_scaled, y_train)
+
+# Extracting the best parameters and model
+best_params = grid_search.best_params_
+best_svc = grid_search.best_estimator_
+
+# Predicting with the best model
+y_pred_best = best_svc.predict(X_test_scaled)
+
+# Evaluating the best model
+accuracy_best = accuracy_score(y_test, y_pred_best)
+
+# Outputting the best parameters and the accuracy of the best model
+print("Best Parameters:", best_params)
+print("Accuracy of the best SVC model:", accuracy_best)
+
+# %% Gender Distribution in Clothing Purchases
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+clothing_data = data[data['Category'] == 'Clothing']
+gender_counts = clothing_data['Gender'].value_counts()
+
+plt.figure(figsize=(8, 5))
+sns.barplot(x=gender_counts.index, y=gender_counts.values)
+plt.title('Gender Distribution in Clothing Purchases')
+plt.xlabel('Gender')
+plt.ylabel('Number of Purchases')
+plt.show()
+
+
+#%% Purchase Amount Distribution in Clothing Category
+
+plt.figure(figsize=(8, 5))
+sns.histplot(clothing_data['Purchase Amount (USD)'], bins=20, kde=True)
+plt.title('Purchase Amount Distribution in Clothing Category')
+plt.xlabel('Purchase Amount (USD)')
+plt.ylabel('Frequency')
+plt.show()
+
+
+#%% Purchase Frequency by Location for Clothing Category
+location_counts = clothing_data['Location'].value_counts()
+plt.figure(figsize=(12, 6))
+sns.barplot(x=location_counts.index, y=location_counts.values)
+plt.title('Purchase Frequency by Location for Clothing Category')
+plt.xlabel('Location')
+plt.ylabel('Number of Purchases')
+plt.xticks(rotation=90)
+plt.show()
+
+
+#%% Previous Purchases vs Clothing Purchases
+
+plt.figure(figsize=(8, 5))
+sns.scatterplot(data=clothing_data, x='Previous Purchases', y='Purchase Amount (USD)', hue='Gender')
+plt.title('Previous Purchases vs Clothing Purchases')
+plt.xlabel('Previous Purchases')
+plt.ylabel('Purchase Amount (USD)')
+plt.legend(title='Gender')
+plt.show()
+
+# %%
