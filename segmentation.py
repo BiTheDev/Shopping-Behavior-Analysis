@@ -1,5 +1,6 @@
 
 # %%
+from mpl_toolkits.mplot3d import Axes3D
 import plotly.express as px
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.metrics import silhouette_score
@@ -125,6 +126,39 @@ plt.ylabel('Purchase Amount (USD)')
 plt.show()
 
 
+# %%
+
+# Assuming 'df_segments' is your DataFrame with clustered data
+
+# Create a 3D scatter plot
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+print(df_segments.columns)
+# Scatter plot for Age, Purchase Amount (USD), and Frequency of Purchases
+scatter = ax.scatter(
+    df_segments['Age'],
+    df_segments['Purchase Amount (USD)'],
+    df_segments['Frequency of Purchases'],
+    c=df_segments['Cluster'],
+    cmap='viridis',
+    marker='o',  # Set marker style
+    s=50  # Set marker size
+)
+
+# Customize plot labels
+ax.set_xlabel('Age')
+ax.set_ylabel('Purchase Amount (USD)')
+ax.set_zlabel('Frequency of Purchases')
+ax.set_title('Customer Segments Using K-Means (3D)')
+
+# Add a color bar to the right of the plot
+colorbar = plt.colorbar(scatter)
+colorbar.set_label('Cluster')
+
+# Show the plot
+plt.show()
+
+
 # Assuming df_segments contains the one-hot encoded columns, including 'Gender_0' and 'Gender_1'
 
 
@@ -223,3 +257,5 @@ best_knn = model
 
 print(preprocessed_data.head())
 # %%
+
+# can we predict the category of the item purchased based on
