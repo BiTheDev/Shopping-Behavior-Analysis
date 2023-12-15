@@ -86,136 +86,41 @@ columns_with_issues = list(set(nan_columns + inf_columns))
 print("Columns with NaN or infinite values:", columns_with_issues)
 
 
-# %%
-# Need to visualize purchase amount distribution
-# Visualizing the distribution of the target variable
-plt.hist(preprocessed_data['Purchase Amount (USD)'])
-plt.title('Purchase Amount Distribution')
-plt.xlabel('Purchase Amount (USD)')
-plt.ylabel('Count')
-plt.show()
-# stats for purchase amount
-preprocessed_data['Purchase Amount (USD)'].describe()
+# # %%
+# AMOUNT_THRESHOLD = 50
+# preprocessed_data['Purchase Amount (USD)'].describe()
+# preprocessed_data['Purchase Amount Group'] = np.where(
+#     preprocessed_data['Purchase Amount (USD)'] > AMOUNT_THRESHOLD, 1, 0)
 
-# we can group from 20-40, 40-60, 60-80, 80-100
-# I want to categorize the purchase amount into 4 groups
-# 1: 20-40, 2: 40-60, 3: 60-80, 4: 80-100
-# make a new column called 'Purchase Amount Group'
+# preprocessed_data['Purchase Amount Group'].value_counts()
 
-# %%
-# selected_columns = ['Age', 'Gender', 'Location',  'Item Purchased',
-#                     'Frequency of Purchases', 'Review Rating', 'Previous Purchases']
+# # %%
+# df = preprocessed_data.copy()
+# df_segments = df[["Age", "Gender", "Location",
+#                   "Review Rating", "Category", "Frequency of Purchases"]]
+# X = preprocessed_data.drop(
+#     ['Customer ID', 'Category', 'Purchase Amount (USD)', 'Purchase Amount Group'], axis=1)
+# # X = df_segments
+# y = preprocessed_data['Purchase Amount Group']
 
-# X = preprocessed_data[selected_columns]
-# y = preprocessed_data['Purchase Amount Group']  # Target variable
-
+# # Split the data into training and testing sets
 # X_train, X_test, y_train, y_test = train_test_split(
-#     X, y, test_size=0.3, random_state=42)
+#     X, y, test_size=0.2, random_state=42)
 
+# # Create and train the Random Forest model
+# rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+# rf_model.fit(X_train, y_train)
 
-# # Step 4: Train the KNN model
-# k = 10  # Adjust the value of k as needed
-# knn_model = KNeighborsClassifier(n_neighbors=k)
-# knn_model.fit(X_train, y_train)
+# # Make predictions on the test set
+# y_pred = rf_model.predict(X_test)
 
-# # Step 5: Make predictions
-# y_pred = knn_model.predict(X_test)
-
-# # Step 6: Evaluate the model
+# # Evaluate the model
 # accuracy = accuracy_score(y_test, y_pred)
 # print(f"Accuracy: {accuracy:.2f}")
 
 # # Classification report for more detailed evaluation
+
 # print(classification_report(y_test, y_pred))
-
-# %%
-
-# # Assuming 'Target_Variable_Column_Name' is the column you want to predict
-# target_variable = 'Purchase Amount Group'
-
-# # Selecting features for clustering (customize based on your dataset)
-# selected_features = ['Age', 'Gender', 'Location', 'Size', 'Season', 'Item Purchased',
-#                      'Frequency of Purchases', 'Review Rating', 'Previous Purchases']
-
-# # Extracting the selected features
-# X = preprocessed_data[selected_features]
-
-# # Standardizing the data
-# scaler = StandardScaler()
-# X_scaled = scaler.fit_transform(X)
-
-# # Determining the optimal number of clusters using the Elbow method
-# wcss = []
-# for i in range(1, 11):
-#     kmeans = KMeans(n_clusters=i, init='k-means++',
-#                     max_iter=300, n_init=10, random_state=0)
-#     kmeans.fit(X_scaled)
-#     wcss.append(kmeans.inertia_)
-
-# # Plotting the Elbow method
-# plt.plot(range(1, 11), wcss)
-# plt.title('Elbow Method')
-# plt.xlabel('Number of Clusters')
-# plt.ylabel('WCSS (Within-Cluster Sum of Squares)')
-# plt.show()
-
-# # Based on the Elbow method, choose the optimal number of clusters (let's say k=3)
-# optimal_clusters = 10
-
-# # Applying K-Means clustering
-# kmeans = KMeans(n_clusters=optimal_clusters, init='k-means++',
-#                 max_iter=300, n_init=10, random_state=0)
-# preprocessed_data['Cluster'] = kmeans.fit_predict(X_scaled)
-
-# # Visualizing the clusters (customize based on your dataset)
-# for cluster in range(optimal_clusters):
-#     cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster]
-#     plt.scatter(
-#         cluster_data['Age'], cluster_data['Purchase Amount Group'], label=f'Cluster {cluster + 1}')
-
-# plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[
-#             :, 1], s=300, c='red', marker='*', label='Centroids')
-# plt.title('Customer Segmentation')
-# plt.xlabel('Gender')
-# plt.ylabel('Purchase Amount Group')
-# plt.legend()
-# plt.show()
-
-# %%
-AMOUNT_THRESHOLD = 50
-preprocessed_data['Purchase Amount (USD)'].describe()
-preprocessed_data['Purchase Amount Group'] = np.where(
-    preprocessed_data['Purchase Amount (USD)'] > AMOUNT_THRESHOLD, 1, 0)
-
-preprocessed_data['Purchase Amount Group'].value_counts()
-
-# %%
-df = preprocessed_data.copy()
-df_segments = df[["Age", "Gender", "Location",
-                  "Review Rating", "Category", "Frequency of Purchases"]]
-X = preprocessed_data.drop(
-    ['Customer ID', 'Category', 'Purchase Amount (USD)', 'Purchase Amount Group'], axis=1)
-# X = df_segments
-y = preprocessed_data['Purchase Amount Group']
-
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42)
-
-# Create and train the Random Forest model
-rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-rf_model.fit(X_train, y_train)
-
-# Make predictions on the test set
-y_pred = rf_model.predict(X_test)
-
-# Evaluate the model
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy:.2f}")
-
-# Classification report for more detailed evaluation
-
-print(classification_report(y_test, y_pred))
 
 
 # Get feature importances
@@ -301,9 +206,15 @@ print(f"Voting Classifier Accuracy: {accuracy_voting:.2f}")
 # 1: yes, 0: no
 # 1 is the clothing category in the dataset
 
-CLOTHING = 2
+# Mapping for category
+# Accessories -> 0
+# Clothing -> 1
+# Footwear -> 2
+# Outerwear -> 3
+
+CATEGORY = 1
 preprocessed_data['Clothing'] = np.where(
-    preprocessed_data['Category'] == CLOTHING, 1, 0)
+    preprocessed_data['Category'] == CATEGORY, 1, 0)
 preprocessed_data['Clothing'].value_counts()
 
 
@@ -315,14 +226,14 @@ preprocessed_data['Clothing'].value_counts()
 df = preprocessed_data.copy()
 df_segments = df[["Age", "Gender", "Season", "Subscription Status", "Category",
                   "Purchase Amount (USD)", "Frequency of Purchases"]]
-X = preprocessed_data.drop(['Customer ID', 'Category', 'Clothing'], axis=1)
+X = preprocessed_data.drop(
+    ['Customer ID', 'Category', 'Clothing'], axis=1)
 # X = df_segments
 y = preprocessed_data['Clothing']
-print(X.columns)
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42)
+    X, y, test_size=0.3, random_state=42)
 
 # Create and train the Random Forest model
 rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -402,26 +313,22 @@ print(classification_report(y_test, y_pred_tuned))
 
 # %%
 
-# Define individual classifiers
 rf_classifier = RandomForestClassifier(
     n_estimators=100, random_state=42, class_weight='balanced')
 svm_classifier = SVC(probability=True)
 gb_classifier = GradientBoostingClassifier()
 
-# Create a Voting Classifier
 voting_classifier = VotingClassifier(estimators=[
     ('rf', rf_classifier),
     ('svm', svm_classifier),
     ('gb', gb_classifier)
 ], voting='soft')  # 'soft' allows for probability voting
 
-# Train the Voting Classifier
 voting_classifier.fit(X_train, y_train)
 
-# Make predictions on the test set
 y_pred_voting = voting_classifier.predict(X_test)
 
-# Evaluate the Voting Classifier
 accuracy_voting = accuracy_score(y_test, y_pred_voting)
 print(f"Voting Classifier Accuracy: {accuracy_voting:.2f}")
+print(classification_report(y_test, y_pred_voting))
 # %%

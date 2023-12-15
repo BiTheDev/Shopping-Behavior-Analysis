@@ -83,12 +83,12 @@ df_segments = df[["Age", "Gender", "Season", "Subscription Status", "Category",
 
 # Initialize an empty list to store the Within-Cluster-Sum-of-Squares (WCSS) for different cluster numbers
 wcss = []
-plt.figure(figsize=(6, 4))
-df['Gender'].value_counts().plot(kind='bar', color=['blue', 'pink'])
-plt.title('Distribution of Gender')
-plt.xlabel('Gender')
-plt.ylabel('Count')
-plt.show()
+# plt.figure(figsize=(6, 4))
+# df['Gender'].value_counts().plot(kind='bar', color=['blue', 'pink'])
+# plt.title('Distribution of Gender')
+# plt.xlabel('Gender')
+# plt.ylabel('Count')
+# plt.show()
 # Iterate over different numbers of clusters to find the optimal number
 for i in range(1, 8):
     # Create a KMeans instance with the current number of clusters
@@ -179,7 +179,8 @@ plt.show()
 # Assuming you already have preprocessed_data and df_segments
 
 # Split data into features (X) and target variable (y)
-X = df  # Features
+X = df[["Age", "Gender", "Season", "Subscription Status", "Category",
+        "Frequency of Purchases"]]
 y = df_segments["Cluster"]  # Target variable
 
 # Split the data into training and testing sets
@@ -215,7 +216,8 @@ print(conf_matrix)
 
 # %%
 # Split data into features (X) and target variable (y)
-X = df_segments[["Age", "Purchase Amount (USD)"]]  # Features
+X = df[["Age", "Gender", "Season", "Subscription Status", "Category",
+        "Frequency of Purchases"]]
 y = df_segments["Cluster"]  # Target variable
 
 # Split the data into training and testing sets
@@ -247,8 +249,30 @@ best_knn = grid_search.best_estimator_
 y_pred = best_knn.predict(X_test_scaled)
 accuracy = accuracy_score(y_test, y_pred)
 print(f"Accuracy on Test Set: {accuracy}")
-best_knn = model
 
+
+# %%
+rf_classifier = RandomForestClassifier(
+    n_estimators=100, random_state=42, class_weight='balanced')
+svm_classifier = SVC(probability=True)
+gb_classifier = GradientBoostingClassifier()
+
+# Create a Voting Classifier
+voting_classifier = VotingClassifier(estimators=[
+    ('rf', rf_classifier),
+    ('svm', svm_classifier),
+    ('gb', gb_classifier)
+], voting='soft')  # 'soft' allows for probability voting
+
+# Train the Voting Classifier
+voting_classifier.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred_voting = voting_classifier.predict(X_test)
+
+# Evaluate the Voting Classifier
+accuracy_voting = accuracy_score(y_test, y_pred_voting)
+print(f"Voting Classifier Accuracy: {accuracy_voting:.2f}")
 
 # %%
 # Can we predict the likelihood of a customer making a purchase in a specific category
