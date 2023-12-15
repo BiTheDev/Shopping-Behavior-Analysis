@@ -98,8 +98,16 @@ print(f"{lr_model.__class__.__name__}: ")
 print(f"Mean Squared Error is {lr_mse:.2f}")
 print(f"Mean Absolute Error is {lr_mae:.2f} ")
 print(f"R-squared is {lr_r2:.2f}")
-print(f"Explained Variance Score is {lr_explained_variance: .2f}")
-print("------------------------------------")
+print(f"Explained Variance Score is {lr_explained_variance: .2f} \n")
+
+# Get coefficients of the linear regression model as 
+# an indicator of feature importance.
+coefficients = lr_model.fit(X, y).coef_
+
+# Print feature coefficients
+print("Feature coefficients:")
+for feature, coefficient in zip(X_train.columns, coefficients):
+    print(f"{feature}: {coefficient}")
 
 #%%
 # Define the RandomForestRegressor
@@ -107,7 +115,7 @@ rf_model = RandomForestRegressor()
 
 # Define the parameter grid to search
 rf_param_grid = {
-    'n_estimators': [50, 100, 200, 300],
+    'n_estimators': [100, 200, 300],
     'max_features': ['sqrt', 'log2'],
     'max_depth': [None, 10, 20, 30],
     'min_samples_split': [2, 5, 10],
@@ -115,7 +123,7 @@ rf_param_grid = {
 }
 
 # Create a KFold cross-validation object
-rf_kf = KFold(n_splits=5, shuffle=True, random_state=15)
+rf_kf = KFold(n_splits=3, shuffle=True, random_state=15)
 
 # Create the GridSearchCV object
 rf_grid_search = GridSearchCV(estimator=rf_model, param_grid=rf_param_grid, scoring='neg_mean_squared_error', cv=rf_kf)
@@ -144,10 +152,18 @@ print(f"{rf_model.__class__.__name__}:")
 print(f"Mean Squared Error is {rf_mse:.2f}")
 print(f"Mean Absolute Error is {rf_mae:.2f} ")
 print(f"R-squared is {rf_r2:.2f}")
-print(f"Explained Variance Score is {rf_explained_variance: .2f}")
+print(f"Explained Variance Score is {rf_explained_variance:.2f} /n")
+
+# Get feature importances
+importances = rf_model.fit(X, y).feature_importances_
+# Sort indices in descending order of importance
+indices = np.argsort(importances)[::-1]
+# Print feature ranking
+print("Feature ranking:")
+for f in range(X_train.shape[1]):
+    print(f"{X_train.columns[indices[f]]}: {importances[indices[f]]}")
 print("------------------------------------")
 
-#%%
 #%% Visualize the comparison scores of two models
 # Create lists for each metric and model
 metrics = ['Mean Squared Error (MSE)', 'Mean Absolute Error (MAE)', 'R-squared', 'Explained Variance']
@@ -183,10 +199,11 @@ plt.show()
 # Explained Variance Score is -0.01
 
 # RandomForestRegressor:
-# Mean Squared Error is 0.70
-# Mean Absolute Error is 0.71 
-# R-squared is 0.28
-# Explained Variance Score is  0.28
+#RandomForestRegressor:
+#Mean Squared Error is 0.66
+#Mean Absolute Error is 0.69 
+#R-squared is 0.32
+#Explained Variance Score is 0.32
 #
 # In summary, based on the provided scores, the Random Forest Regressor 
 # outperforms the Linear Regression model in terms of predictive performance, 
