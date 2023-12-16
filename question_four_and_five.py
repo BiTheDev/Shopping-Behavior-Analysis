@@ -73,13 +73,13 @@ report_fall= classification_report(y_test_fall, y_pred_fall)
 
 
 print("Accuracy for winter purchase: ", accuracy_winter)
-print("Report for winter purchase: ", report_winter)
+print("Report for winter purchase: \n", report_winter)
 print("Accuracy for summer purchase: ", accuracy_summer)
-print("Report for summer purchase: ", report_summer)
+print("Report for summer purchase: \n", report_summer)
 print("Accuracy for spring purchase: ", accuracy_spring)
-print("Report for spring purchase: ", report_spring)
+print("Report for spring purchase: \n", report_spring)
 print("Accuracy for fall purchase: ", accuracy_fall)
-print("Report for fall purchase: ", report_fall)
+print("Report for fall purchase: \n", report_fall)
 
 
 
@@ -120,13 +120,13 @@ accuracy_winter_svc, accuracy_summer_svc, report_winter_svc, report_summer_svc, 
 
 
 print("SVC Accuracy for winter purchase: ", accuracy_winter_svc)
-print("SVC Report for winter purchase: ", report_winter_svc)
+print("SVC Report for winter purchase: \n", report_winter_svc)
 print("SVC Accuracy for summer purchase: ", accuracy_summer_svc)
-print("SVC Report for summer purchase: ", report_summer_svc)
+print("SVC Report for summer purchase: \n", report_summer_svc)
 print("SVC Accuracy for spring purchase: ", accuracy_spring_svc)
-print("SVC Report for spring purchase: ", report_spring_svc)
+print("SVC Report for spring purchase: \n", report_spring_svc)
 print("SVC Accuracy for fall purchase: ", accuracy_fall_svc)
-print("SVC Report for fall purchase: ", report_fall_svc)
+print("SVC Report for fall purchase: \n", report_fall_svc)
 
 
 
