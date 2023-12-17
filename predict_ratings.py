@@ -9,6 +9,7 @@
 #%%
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
@@ -26,6 +27,7 @@ preprocessed_data = data.copy()
 # Check missing data
 preprocessed_data.isnull().sum()
 
+#%%
 # Plot the review ratings to visualize the distribution
 plt.hist(preprocessed_data["Review Rating"], bins= 20, edgecolor='black', alpha=0.7)
 plt.xticks(np.arange(1.0, 6.0))
@@ -52,6 +54,16 @@ preprocessed_data[numerical_columns] = scaler.fit_transform(preprocessed_data[nu
 
 # Displaying the first few rows of the preprocessed dataset
 print(preprocessed_data.head())
+
+#%%
+# Understand feature correction
+correlation_matrix = preprocessed_data.corr()
+
+# Plot a heatmap to visualize the correlation matrix
+plt.figure(figsize=(20, 15))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', linewidths=.5)
+plt.title('Feature Correlation Matrix')
+plt.show()
 
 #%%
 # Define the feature columns and target column
@@ -152,7 +164,7 @@ print(f"{rf_model.__class__.__name__}:")
 print(f"Mean Squared Error is {rf_mse:.2f}")
 print(f"Mean Absolute Error is {rf_mae:.2f} ")
 print(f"R-squared is {rf_r2:.2f}")
-print(f"Explained Variance Score is {rf_explained_variance:.2f} /n")
+print(f"Explained Variance Score is {rf_explained_variance:.2f} \n")
 
 # Get feature importances
 importances = rf_model.fit(X, y).feature_importances_
@@ -163,6 +175,15 @@ print("Feature ranking:")
 for f in range(X_train.shape[1]):
     print(f"{X_train.columns[indices[f]]}: {importances[indices[f]]}")
 print("------------------------------------")
+
+# Visualize the feature importance
+plt.figure(figsize=(10, 6))
+plt.bar(range(X_train.shape[1]), importances[indices], align="center")
+plt.xticks(range(X_train.shape[1]), X_train.columns[indices], rotation=90)
+plt.xlabel("Feature")
+plt.ylabel("Importance Score")
+plt.title("Feature Importance for Random Forest Regressor")
+plt.show()
 
 #%% Visualize the comparison scores of two models
 # Create lists for each metric and model
